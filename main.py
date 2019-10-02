@@ -8,8 +8,12 @@ from urllib.request import urlopen, urlretrieve
 import urllib.request
 import os
 import re
+import logging
 
 bot = telebot.TeleBot(config.token)
+
+logger = telebot.logger
+telebot.logger.setLevel(logging.INFO)
 
 vk_session = vk_api.VkApi(config.phone, config.password)
 vk_session.auth()
@@ -32,6 +36,17 @@ def write_ids():
     f = open("chats.json", "w")
     f.write(json.dumps(all_ids))
     f.close()
+
+
+@bot.channel_post_handler(commands=["start", "help"])
+def start_chanel(message):
+    global all_ids
+    all_ids.append(message.chat.id)
+    write_ids()
+    bot.reply_to(
+        message,
+        "Теперь Вы будете получать сообщения о новых записях в сообществе /dev/null во Вконтакте.",
+    )
 
 
 @bot.message_handler(commands=["start", "help"])
@@ -108,17 +123,16 @@ def post(response):
                 urllib.request.urlretrieve(
                     url, os.getcwd() + "/tmp/" + i["type"] + ".jpg"
                 )
-                to_send = open(os.getcwd() + "/tmp/" + i["type"] + ".jpg", "rb")
                 for j in range(len(all_ids)):
+                    to_send = open(os.getcwd() + "/tmp/" + i["type"] + ".jpg", "rb")
                     bot.send_photo(all_ids[j], to_send, caption=str(response["text"]))
                 to_send.close()
                 os.remove("tmp/" + i["type"] + ".jpg")
             elif i["type"] == "video":
                 download(url)
                 for i in range(len(all_ids)):
-                    bot.send_video(
-                        all_ids[i], to_send_file, caption=str(response["text"])
-                    )
+                    f = open(to_send_file.name, "rb")
+                    bot.send_video(all_ids[i], f, caption=str(response["text"]))
                 to_send_file.close()
         elif i["type"] == "link":
             for j in range(len(all_ids)):
