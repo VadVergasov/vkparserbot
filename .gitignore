@@ -5,3 +5,4 @@ __pycache__
 log.txt
 chats.json
 tmp/
+last.id

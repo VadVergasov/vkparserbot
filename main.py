@@ -23,6 +23,13 @@ vk = vk_session.get_api()
 
 last_id = -1
 
+if not os.path.isfile(os.getcwd()):
+    with open(os.getcwd() + "/last.id", 'r'):
+        pass
+else:
+    with open(os.getcwd() + "/last.id", 'w') as f:
+        last_id = int(f.read())
+
 if not os.path.isfile(os.getcwd() + "/chats.json"):
     with open("chats.json", "w"):
         pass
@@ -112,22 +119,36 @@ def post(response):
             )
             print(url)
             if i["type"] == "photo":
-                info = vk.photos.get(
-                    owner_id=str(i[i["type"]]["owner_id"]),
-                    album_id=i[i["type"]]["album_id"],
-                    photo_ids=i[i["type"]]["id"],
-                    count="1",
-                )
-                for j in info["items"][0]["sizes"]:
-                    url = j["url"]
-                urllib.request.urlretrieve(
-                    url, os.getcwd() + "/tmp/" + i["type"] + ".jpg"
-                )
-                for j in range(len(all_ids)):
-                    to_send = open(os.getcwd() + "/tmp/" + i["type"] + ".jpg", "rb")
-                    bot.send_photo(all_ids[j], to_send, caption=str(response["text"]))
-                to_send.close()
-                os.remove("tmp/" + i["type"] + ".jpg")
+                try:
+                    info = vk.photos.get(
+                        owner_id=str(i[i["type"]]["owner_id"]),
+                        album_id=i[i["type"]]["album_id"],
+                        photo_ids=i[i["type"]]["id"],
+                        count="1",
+                    )
+                    for j in info["items"][0]["sizes"]:
+                        url = j["url"]
+                    urllib.request.urlretrieve(
+                        url, os.getcwd() + "/tmp/" + i["type"] + ".jpg"
+                    )
+                    for j in range(len(all_ids)):
+                        to_send = open(os.getcwd() + "/tmp/" + i["type"] + ".jpg", "rb")
+                        bot.send_photo(
+                            all_ids[j], to_send, caption=str(response["text"])
+                        )
+                    to_send.close()
+                    os.remove("tmp/" + i["type"] + ".jpg")
+                except Exception as e:
+                    if not os.path.isfile(os.getcwd() + "/log.txt"):
+                        with open("log.txt", "w"):
+                            pass
+                    f = open("log.txt", "r")
+                    log = f.read()
+                    f.close()
+                    log += str(e) + "\n" + str(response["items"][i]) + "\n\n"
+                    f = open("log.txt", "w")
+                    f.write(log)
+                    f.close()
             elif i["type"] == "video":
                 download(url)
                 for i in range(len(all_ids)):
@@ -162,6 +183,7 @@ def check():
         if (
             last_id != int(response["items"][0]["id"])
             and response["items"][i]["marked_as_ads"] != 1
+            and not response["items"][i]["text"].find("Это #партнёрский пост")
         ):
             try:
                 post(response["items"][i])
@@ -177,6 +199,8 @@ def check():
                 f.write(log)
                 f.close()
             last_id = int(response["items"][i]["id"])
+            with open(os.getcwd()+"/last.id", 'w') as f:
+                f.write(str(last_id))
 
 
 def run1():
