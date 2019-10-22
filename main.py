@@ -23,11 +23,11 @@ vk = vk_session.get_api()
 
 last_id = -1
 
-if not os.path.isfile(os.getcwd()):
-    with open(os.getcwd() + "/last.id", 'r'):
+if not os.path.isfile(os.getcwd() + "/last.id"):
+    with open(os.getcwd() + "/last.id", "w"):
         pass
 else:
-    with open(os.getcwd() + "/last.id", 'w') as f:
+    with open(os.getcwd() + "/last.id", "r") as f:
         last_id = int(f.read())
 
 if not os.path.isfile(os.getcwd() + "/chats.json"):
@@ -183,7 +183,7 @@ def check():
         if (
             last_id != int(response["items"][0]["id"])
             and response["items"][i]["marked_as_ads"] != 1
-            and not response["items"][i]["text"].find("Это #партнёрский пост")
+            and not response["items"][i]["text"].find("Это #партнёрский пост") != -1
         ):
             try:
                 post(response["items"][i])
@@ -199,7 +199,7 @@ def check():
                 f.write(log)
                 f.close()
             last_id = int(response["items"][i]["id"])
-            with open(os.getcwd()+"/last.id", 'w') as f:
+            with open(os.getcwd() + "/last.id", "w") as f:
                 f.write(str(last_id))
 
 
