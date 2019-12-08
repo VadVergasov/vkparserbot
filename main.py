@@ -1,84 +1,80 @@
-import vk_api
-import config
-import threading
 import json
-import telebot
+import threading
 from multiprocessing import Process
 from urllib.request import urlopen, urlretrieve
 import urllib.request
 import os
 import re
-import logging
+import telebot
+import vk_api
+import config
 
-bot = telebot.TeleBot(config.token)
+BOT = telebot.TeleBot(config.token)
 
-logger = telebot.logger
-telebot.logger.setLevel(logging.INFO)
+VK_SESSION = vk_api.VkApi(config.phone, config.password)
+VK_SESSION.auth()
 
-vk_session = vk_api.VkApi(config.phone, config.password)
-vk_session.auth()
+VK = VK_SESSION.get_api()
 
-vk = vk_session.get_api()
-
-
-last_id = -1
+ALL_IDS = []
+LAST_ID = -1
 
 if not os.path.isfile(os.getcwd() + "/last.id"):
     with open(os.getcwd() + "/last.id", "w"):
         pass
 else:
     with open(os.getcwd() + "/last.id", "r") as f:
-        last_id = int(f.read())
+        LAST_ID
+        LAST_ID = int(f.read())
 
 if not os.path.isfile(os.getcwd() + "/chats.json"):
     with open("chats.json", "w"):
         pass
-f = open("chats.json", "r")
-all_ids = json.loads(f.read())
-f.close()
+with open("chats.json", "r") as f:
+    ALL_IDS
+    ALL_IDS = json.loads(f.read())
 
 
 def write_ids():
-    global all_ids
-    f = open("chats.json", "w")
-    f.write(json.dumps(all_ids))
-    f.close()
+    global ALL_IDS
+    with open("chats.json", "w") as f:
+        f.write(json.dumps(ALL_IDS))
 
 
-@bot.channel_post_handler(commands=["start", "help"])
+@BOT.channel_post_handler(commands=["start", "help"])
 def start_chanel(message):
-    global all_ids
-    all_ids.append(message.chat.id)
+    global ALL_IDS
+    ALL_IDS.append(message.chat.id)
     write_ids()
-    bot.reply_to(
+    BOT.reply_to(
         message,
         "Теперь Вы будете получать сообщения о новых записях в сообществе /dev/null во Вконтакте.",
     )
 
 
-@bot.message_handler(commands=["start", "help"])
+@BOT.message_handler(commands=["start", "help"])
 def start(message):
-    global all_ids
-    all_ids.append(message.chat.id)
+    global ALL_IDS
+    ALL_IDS.append(message.chat.id)
     write_ids()
-    bot.reply_to(
+    BOT.reply_to(
         message,
         "Теперь Вы будете получать сообщения о новых записях в сообществе /dev/null во Вконтакте.",
     )
 
 
-@bot.message_handler(commands=["stop"])
+@BOT.message_handler(commands=["stop"])
 def stop(message):
-    global all_ids
+    global ALL_IDS
     try:
-        all_ids.remove(message.chat.id)
+        ALL_IDS.remove(message.chat.id)
         write_ids()
-    except Exception as e:
-        print(e)
-    bot.reply_to(message, "Вы отписаны от рассылки")
+    except Exception as error:
+        print(error)
+    BOT.reply_to(message, "Вы отписаны от рассылки")
 
 
-to_send_file = None
+TO_SEND_FILE = None
 
 
 def download(url):
@@ -90,9 +86,9 @@ def download(url):
     urls = string.findall(link)
 
     for i in ["1080.mp4", "720.mp4", "360.mp4", "240.mp4"]:
-        for url in urls:
-            if i in url:
-                source = url.replace("\\/", "/")
+        for uri in urls:
+            if i in uri:
+                source = uri.replace("\\/", "/")
                 reg = re.compile(r"/([^/]*\.mp4)")
                 name = reg.findall(source)[0]
                 path = "tmp/"
@@ -100,13 +96,13 @@ def download(url):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
                 urlretrieve(source, fullpath)
-                global to_send_file
-                to_send_file = open(fullpath, "rb")
+                global TO_SEND_FILE
+                TO_SEND_FILE = open(fullpath, "rb")
                 return
 
 
 def post(response):
-    global all_ids
+    global ALL_IDS
     attachments = response["attachments"]
     for i in attachments:
         if i["type"] != "link":
@@ -120,7 +116,7 @@ def post(response):
             print(url)
             if i["type"] == "photo":
                 try:
-                    info = vk.photos.get(
+                    info = VK.photos.get(
                         owner_id=str(i[i["type"]]["owner_id"]),
                         album_id=i[i["type"]]["album_id"],
                         photo_ids=i[i["type"]]["id"],
@@ -131,34 +127,35 @@ def post(response):
                     urllib.request.urlretrieve(
                         url, os.getcwd() + "/tmp/" + i["type"] + ".jpg"
                     )
-                    for j in range(len(all_ids)):
+                    for j in range(len(ALL_IDS)):
                         to_send = open(os.getcwd() + "/tmp/" + i["type"] + ".jpg", "rb")
-                        bot.send_photo(
-                            all_ids[j], to_send, caption=str(response["text"])
+                        BOT.send_photo(
+                            ALL_IDS[j], to_send, caption=str(response["text"])
                         )
                     to_send.close()
                     os.remove("tmp/" + i["type"] + ".jpg")
-                except Exception as e:
+                except Exception as error:
                     if not os.path.isfile(os.getcwd() + "/log.txt"):
                         with open("log.txt", "w"):
                             pass
-                    f = open("log.txt", "r")
-                    log = f.read()
-                    f.close()
-                    log += str(e) + "\n" + str(response["items"][i]) + "\n\n"
-                    f = open("log.txt", "w")
-                    f.write(log)
-                    f.close()
+                    log = ""
+                    with open("log.txt", "r") as f:
+                        log = f.read()
+                    log += str(error) + "\n" + str(response["items"][i]) + "\n\n"
+                    with open("log.txt", "w") as f:
+                        f.write(log)
             elif i["type"] == "video":
                 download(url)
-                for i in range(len(all_ids)):
-                    f = open(to_send_file.name, "rb")
-                    bot.send_video(all_ids[i], f, caption=str(response["text"]))
-                to_send_file.close()
+                for j in range(len(ALL_IDS)):
+                    with open(TO_SEND_FILE.name, "rb") as f:
+                        BOT.send_video(ALL_IDS[i], f, caption=str(response["text"]))
+                path = TO_SEND_FILE.name
+                TO_SEND_FILE.close()
+                os.remove(path)
         elif i["type"] == "link":
-            for j in range(len(all_ids)):
-                bot.send_message(
-                    all_ids[j],
+            for j in range(len(ALL_IDS)):
+                BOT.send_message(
+                    ALL_IDS[j],
                     str(response["text"])
                     + "\n["
                     + str(i["link"]["title"])
@@ -173,44 +170,43 @@ def post(response):
 
 
 def check():
-    global last_id
+    global LAST_ID
     threading.Timer(20.0, check).start()
-    response = vk.wall.get(
+    response = VK.wall.get(
         owner_id="-72495085", count="1", filter="owner", extended="1", offset=0
     )
     print(response["items"][0]["id"])
     for i in range(len(response["items"]) - 1, -1, -1):
         if (
-            last_id != int(response["items"][0]["id"])
+            LAST_ID != int(response["items"][0]["id"])
             and response["items"][i]["marked_as_ads"] != 1
             and not response["items"][i]["text"].find("Это #партнёрский пост") != -1
         ):
             try:
                 post(response["items"][i])
-            except Exception as e:
+            except Exception as error:
                 if not os.path.isfile(os.getcwd() + "/log.txt"):
                     with open("log.txt", "w"):
                         pass
-                f = open("log.txt", "r")
-                log = f.read()
-                f.close()
-                log += str(e) + "\n" + str(response["items"][i]) + "\n\n"
-                f = open("log.txt", "w")
-                f.write(log)
-                f.close()
-            last_id = int(response["items"][i]["id"])
+                log = ""
+                with open("log.txt", "r") as f:
+                    log = f.read()
+                log += str(error) + "\n" + str(response["items"][i]) + "\n\n"
+                with open("log.txt", "w") as f:
+                    f.write(log)
+            LAST_ID = int(response["items"][i]["id"])
             with open(os.getcwd() + "/last.id", "w") as f:
-                f.write(str(last_id))
+                f.write(str(LAST_ID))
 
 
 def run1():
-    bot.polling()
+    BOT.polling()
 
 
 if __name__ == "__main__":
-    p1 = Process(target=run1)
-    p1.start()
-    p2 = Process(target=check)
-    p2.start()
-    p1.join()
-    p2.join()
+    P1 = Process(target=run1)
+    P1.start()
+    P2 = Process(target=check)
+    P2.start()
+    P1.join()
+    P2.join()
