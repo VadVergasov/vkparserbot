@@ -24,14 +24,12 @@ if not os.path.isfile(os.getcwd() + "/last.id"):
         pass
 else:
     with open(os.getcwd() + "/last.id", "r") as f:
-        LAST_ID
         LAST_ID = int(f.read())
 
 if not os.path.isfile(os.getcwd() + "/chats.json"):
     with open("chats.json", "w"):
         pass
 with open("chats.json", "r") as f:
-    ALL_IDS
     ALL_IDS = json.loads(f.read())
 
 
