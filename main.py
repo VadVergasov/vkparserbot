@@ -1,12 +1,15 @@
 import json
-import threading
-from multiprocessing import Process
-from urllib.request import urlopen, urlretrieve
-import urllib.request
 import os
 import re
+import threading
+import traceback
+import urllib.request
+from multiprocessing import Process
+from urllib.request import urlopen, urlretrieve
+
 import telebot
 import vk_api
+
 import config
 
 BOT = telebot.TeleBot(config.token)
@@ -139,14 +142,19 @@ def post(response):
                     log = ""
                     with open("log.txt", "r") as f:
                         log = f.read()
-                    log += str(error) + "\n" + str(response["items"][i]) + "\n\n"
+                    log += (
+                        str(traceback.format_exc())
+                        + "\n"
+                        + str(response["items"][i])
+                        + "\n\n"
+                    )
                     with open("log.txt", "w") as f:
                         f.write(log)
             elif i["type"] == "video":
                 download(url)
                 for j in range(len(ALL_IDS)):
                     with open(TO_SEND_FILE.name, "rb") as f:
-                        BOT.send_video(ALL_IDS[i], f, caption=str(response["text"]))
+                        BOT.send_video(ALL_IDS[j], f, caption=str(response["text"]))
                 path = TO_SEND_FILE.name
                 TO_SEND_FILE.close()
                 os.remove(path)
@@ -189,7 +197,12 @@ def check():
                 log = ""
                 with open("log.txt", "r") as f:
                     log = f.read()
-                log += str(error) + "\n" + str(response["items"][i]) + "\n\n"
+                log += (
+                    str(traceback.format_exc())
+                    + "\n"
+                    + str(response["items"][i])
+                    + "\n\n"
+                )
                 with open("log.txt", "w") as f:
                     f.write(log)
             LAST_ID = int(response["items"][i]["id"])
