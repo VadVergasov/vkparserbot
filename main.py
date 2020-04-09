@@ -88,7 +88,7 @@ def stop(message):
     BOT.reply_to(message, "Вы отписаны от рассылки")
 
 
-TO_SEND_FILE = None
+TO_SEND_FILES = []
 
 
 def download(url):
@@ -110,14 +110,15 @@ def download(url):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
                 urlretrieve(source, fullpath)
-                global TO_SEND_FILE
-                TO_SEND_FILE = open(fullpath, "rb")
+                global TO_SEND_FILES
+                TO_SEND_FILES.append(open(fullpath, "rb"))
                 return
 
 
 def post(response):
     global ALL_IDS
     attachments = response["attachments"]
+    cnt = 1
     for i in attachments:
         if i["type"] != "link":
             url = (
@@ -138,30 +139,17 @@ def post(response):
                     for j in info["items"][0]["sizes"]:
                         url = j["url"]
                     urllib.request.urlretrieve(
-                        url, config.working_directory + "/tmp/" + i["type"] + ".jpg"
+                        url,
+                        config.working_directory
+                        + "/tmp/"
+                        + i["type"]
+                        + str(cnt)
+                        + ".jpg",
                     )
-                    for j in range(len(ALL_IDS)):
-                        to_send = open(
-                            config.working_directory + "/tmp/" + i["type"] + ".jpg",
-                            "rb",
-                        )
-                        BOT.send_photo(
-                            ALL_IDS[j], to_send, caption=str(response["text"])
-                        )
-                    to_send.close()
-                    os.remove(config.working_directory + "/tmp/" + i["type"] + ".jpg")
                 except Exception as error:
                     write_log(error, response["items"][i])
             elif i["type"] == "video":
                 download(url)
-                for j in range(len(ALL_IDS)):
-                    with open(
-                        config.working_directory + "/" + TO_SEND_FILE.name, "rb"
-                    ) as f:
-                        BOT.send_video(ALL_IDS[j], f, caption=str(response["text"]))
-                path = TO_SEND_FILE.name
-                TO_SEND_FILE.close()
-                os.remove(path)
         elif i["type"] == "link":
             for j in range(len(ALL_IDS)):
                 BOT.send_message(
@@ -177,6 +165,24 @@ def post(response):
                 )
         else:
             write_log(TypeError, response)
+        cnt += 1
+    media = []
+    for i in TO_SEND_FILES:
+        if str(i.name).endswith(".mp4"):
+            media.append(
+                telebot.types.InputMediaVideo(
+                    open(config.working_directory + "/tmp/" + i.name)
+                )
+            )
+        else:
+            media.append(
+                telebot.types.InputMediaPhoto(
+                    open(config.working_directory + "/tmp/" + i.name)
+                )
+            )
+    for i in ALL_IDS:
+        BOT.send_media_group(i, media=media)
+        BOT.send_message(i, str(response["text"]))
 
 
 def check():
@@ -189,7 +195,7 @@ def check():
         if (
             LAST_ID != int(response["items"][0]["id"])
             and response["items"][i]["marked_as_ads"] != 1
-            and not response["items"][i]["text"].find("Это #партнёрский пост") != -1
+            and not response["items"][i]["text"].find("#партнёр") != -1
         ):
             try:
                 post(response["items"][i])
