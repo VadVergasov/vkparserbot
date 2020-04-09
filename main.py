@@ -24,11 +24,14 @@ ALL_IDS = []
 LAST_ID = -1
 
 if not os.path.isfile(config.working_directory + "/last.id"):
-    with open(config.working_directory + "/last.id", "w"):
-        pass
+    with open(config.working_directory + "/last.id", "w") as f:
+        f.write(str(-1))
 else:
     with open(config.working_directory + "/last.id", "r") as f:
-        LAST_ID = int(f.read())
+        try:
+            LAST_ID = int(f.read())
+        except ValueError as error:
+            LAST_ID = -1
 
 if not os.path.isfile(config.working_directory + "/chats.json"):
     with open("chats.json", "w"):
@@ -146,6 +149,16 @@ def post(response):
                         + str(cnt)
                         + ".jpg",
                     )
+                    TO_SEND_FILES.append(
+                        open(
+                            config.working_directory
+                            + "/tmp/"
+                            + i["type"]
+                            + str(cnt)
+                            + ".jpg",
+                            "rb",
+                        )
+                    )
                 except Exception as error:
                     write_log(error, response["items"][i])
             elif i["type"] == "video":
@@ -167,22 +180,33 @@ def post(response):
             write_log(TypeError, response)
         cnt += 1
     media = []
+    if len(TO_SEND_FILES) > 1:
+        for i in TO_SEND_FILES:
+            if str(i.name).endswith(".mp4"):
+                media.append(
+                    telebot.types.InputMediaVideo(
+                        open(config.working_directory + "/tmp/" + i.name)
+                    )
+                )
+            else:
+                media.append(
+                    telebot.types.InputMediaPhoto(
+                        open(config.working_directory + "/tmp/" + i.name)
+                    )
+                )
+        for i in ALL_IDS:
+            BOT.send_media_group(i, media=media)
+            BOT.send_message(i, str(response["text"]))
+    elif str(TO_SEND_FILES[0].name).endswith(".mp4"):
+        for i in ALL_IDS:
+            BOT.send_video(i, TO_SEND_FILES[0], caption=str(response["text"]))
+    else:
+        for i in ALL_IDS:
+            BOT.send_photo(i, TO_SEND_FILES[0], caption=str(response["text"]))
     for i in TO_SEND_FILES:
-        if str(i.name).endswith(".mp4"):
-            media.append(
-                telebot.types.InputMediaVideo(
-                    open(config.working_directory + "/tmp/" + i.name)
-                )
-            )
-        else:
-            media.append(
-                telebot.types.InputMediaPhoto(
-                    open(config.working_directory + "/tmp/" + i.name)
-                )
-            )
-    for i in ALL_IDS:
-        BOT.send_media_group(i, media=media)
-        BOT.send_message(i, str(response["text"]))
+        path = config.working_directory + "/tmp/" + i.name
+        i.close()
+        os.remove(path)
 
 
 def check():
