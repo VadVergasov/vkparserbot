@@ -204,7 +204,7 @@ def post(response):
         for i in ALL_IDS:
             BOT.send_photo(i, TO_SEND_FILES[0], caption=str(response["text"]))
     for i in TO_SEND_FILES:
-        path = config.working_directory + "/tmp/" + i.name
+        path = i.name
         i.close()
         os.remove(path)
 
