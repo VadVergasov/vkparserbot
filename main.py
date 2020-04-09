@@ -24,7 +24,7 @@ ALL_IDS = []
 LAST_ID = -1
 
 if not os.path.isfile(config.working_directory + "/last.id"):
-    with open(os.getcwd() + "/last.id", "w"):
+    with open(config.working_directory + "/last.id", "w"):
         pass
 else:
     with open(config.working_directory + "/last.id", "r") as f:
@@ -38,7 +38,7 @@ with open(config.working_directory + "/chats.json", "r") as f:
 
 
 def write_log(error, info):
-    if not os.path.isfile(os.getcwd() + "/log.txt"):
+    if not os.path.isfile(config.working_directory + "/log.txt"):
         with open(config.working_directory + "/log.txt", "w"):
             pass
     log = ""
@@ -105,7 +105,7 @@ def download(url):
                 source = uri.replace("\\/", "/")
                 reg = re.compile(r"/([^/]*\.mp4)")
                 name = reg.findall(source)[0]
-                path = os.getcwd() + "/tmp/"
+                path = config.working_directory + "/tmp/"
                 if not os.path.exists(path):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
