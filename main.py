@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import json
 import os
 import re
@@ -22,23 +23,35 @@ VK = VK_SESSION.get_api()
 ALL_IDS = []
 LAST_ID = -1
 
-if not os.path.isfile(os.getcwd() + "/last.id"):
+if not os.path.isfile(config.working_directory + "/last.id"):
     with open(os.getcwd() + "/last.id", "w"):
         pass
 else:
-    with open(os.getcwd() + "/last.id", "r") as f:
+    with open(config.working_directory + "/last.id", "r") as f:
         LAST_ID = int(f.read())
 
-if not os.path.isfile(os.getcwd() + "/chats.json"):
+if not os.path.isfile(config.working_directory + "/chats.json"):
     with open("chats.json", "w"):
         pass
-with open("chats.json", "r") as f:
+with open(config.working_directory + "/chats.json", "r") as f:
     ALL_IDS = json.loads(f.read())
+
+
+def write_log(error, info):
+    if not os.path.isfile(os.getcwd() + "/log.txt"):
+        with open(config.working_directory + "/log.txt", "w"):
+            pass
+    log = ""
+    with open(config.working_directory + "/log.txt", "r") as f:
+        log = f.read()
+    log += str(traceback.format_exc()) + "\n" + str(info) + "\n\n"
+    with open("log.txt", "w") as f:
+        f.write(log)
 
 
 def write_ids():
     global ALL_IDS
-    with open("chats.json", "w") as f:
+    with open(config.working_directory + "/chats.json", "w") as f:
         f.write(json.dumps(ALL_IDS))
 
 
@@ -71,7 +84,7 @@ def stop(message):
         ALL_IDS.remove(message.chat.id)
         write_ids()
     except Exception as error:
-        print(error)
+        pass
     BOT.reply_to(message, "Вы отписаны от рассылки")
 
 
@@ -92,7 +105,7 @@ def download(url):
                 source = uri.replace("\\/", "/")
                 reg = re.compile(r"/([^/]*\.mp4)")
                 name = reg.findall(source)[0]
-                path = "tmp/"
+                path = os.getcwd() + "/tmp/"
                 if not os.path.exists(path):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
@@ -114,7 +127,6 @@ def post(response):
                 + "_"
                 + str(i[i["type"]]["id"])
             )
-            print(url)
             if i["type"] == "photo":
                 try:
                     info = VK.photos.get(
@@ -126,34 +138,26 @@ def post(response):
                     for j in info["items"][0]["sizes"]:
                         url = j["url"]
                     urllib.request.urlretrieve(
-                        url, os.getcwd() + "/tmp/" + i["type"] + ".jpg"
+                        url, config.working_directory + "/tmp/" + i["type"] + ".jpg"
                     )
                     for j in range(len(ALL_IDS)):
-                        to_send = open(os.getcwd() + "/tmp/" + i["type"] + ".jpg", "rb")
+                        to_send = open(
+                            config.working_directory + "/tmp/" + i["type"] + ".jpg",
+                            "rb",
+                        )
                         BOT.send_photo(
                             ALL_IDS[j], to_send, caption=str(response["text"])
                         )
                     to_send.close()
-                    os.remove("tmp/" + i["type"] + ".jpg")
+                    os.remove(config.working_directory + "/tmp/" + i["type"] + ".jpg")
                 except Exception as error:
-                    if not os.path.isfile(os.getcwd() + "/log.txt"):
-                        with open("log.txt", "w"):
-                            pass
-                    log = ""
-                    with open("log.txt", "r") as f:
-                        log = f.read()
-                    log += (
-                        str(traceback.format_exc())
-                        + "\n"
-                        + str(response["items"][i])
-                        + "\n\n"
-                    )
-                    with open("log.txt", "w") as f:
-                        f.write(log)
+                    write_log(error, response["items"][i])
             elif i["type"] == "video":
                 download(url)
                 for j in range(len(ALL_IDS)):
-                    with open(TO_SEND_FILE.name, "rb") as f:
+                    with open(
+                        config.working_directory + "/" + TO_SEND_FILE.name, "rb"
+                    ) as f:
                         BOT.send_video(ALL_IDS[j], f, caption=str(response["text"]))
                 path = TO_SEND_FILE.name
                 TO_SEND_FILE.close()
@@ -172,7 +176,7 @@ def post(response):
                     disable_web_page_preview=True,
                 )
         else:
-            print(response)
+            write_log(TypeError, response)
 
 
 def check():
@@ -181,7 +185,6 @@ def check():
     response = VK.wall.get(
         owner_id="-72495085", count="1", filter="owner", extended="1", offset=0
     )
-    print(response["items"][0]["id"])
     for i in range(len(response["items"]) - 1, -1, -1):
         if (
             LAST_ID != int(response["items"][0]["id"])
@@ -191,22 +194,9 @@ def check():
             try:
                 post(response["items"][i])
             except Exception as error:
-                if not os.path.isfile(os.getcwd() + "/log.txt"):
-                    with open("log.txt", "w"):
-                        pass
-                log = ""
-                with open("log.txt", "r") as f:
-                    log = f.read()
-                log += (
-                    str(traceback.format_exc())
-                    + "\n"
-                    + str(response["items"][i])
-                    + "\n\n"
-                )
-                with open("log.txt", "w") as f:
-                    f.write(log)
+                write_log(error, response["items"][i])
             LAST_ID = int(response["items"][i]["id"])
-            with open(os.getcwd() + "/last.id", "w") as f:
+            with open(config.working_directory + "/last.id", "w") as f:
                 f.write(str(LAST_ID))
 
 
