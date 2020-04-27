@@ -114,7 +114,7 @@ def download(url):
                 fullpath = os.path.join(path, name)
                 urlretrieve(source, fullpath)
                 global TO_SEND_FILES
-                TO_SEND_FILES.append(open(fullpath, "rb"))
+                TO_SEND_FILES.append(fullpath)
                 return
 
 
@@ -150,63 +150,60 @@ def post(response):
                         + ".jpg",
                     )
                     TO_SEND_FILES.append(
-                        open(
-                            config.working_directory
-                            + "/tmp/"
-                            + i["type"]
-                            + str(cnt)
-                            + ".jpg",
-                            "rb",
-                        )
+                        config.working_directory
+                        + "/tmp/"
+                        + i["type"]
+                        + str(cnt)
+                        + ".jpg"
                     )
                 except Exception as error:
                     write_log(error, response["items"][i])
             elif i["type"] == "video":
                 download(url)
         elif i["type"] == "link":
-            for j in range(len(ALL_IDS)):
-                BOT.send_message(
-                    ALL_IDS[j],
-                    str(response["text"])
-                    + "\n["
-                    + str(i["link"]["title"])
-                    + "]("
-                    + str(i["link"]["url"])
-                    + ")",
-                    parse_mode="Markdown",
-                    disable_web_page_preview=True,
-                )
+            pass
         else:
             write_log(TypeError, response)
         cnt += 1
     media = []
     if len(TO_SEND_FILES) > 1:
+        index = 1
         for i in TO_SEND_FILES:
-            if str(i.name).endswith(".mp4"):
-                media.append(
-                    telebot.types.InputMediaVideo(
-                        open(config.working_directory + "/tmp/" + i.name)
+            if str(i).endswith(".mp4"):
+                if index == 1:
+                    media.append(
+                        telebot.types.InputMediaVideo(
+                            open(i, "rb"), caption=str(response["text"])
+                        )
                     )
-                )
+                else:
+                    media.append(telebot.types.InputMediaVideo(open(i, "rb")))
             else:
-                media.append(
-                    telebot.types.InputMediaPhoto(
-                        open(config.working_directory + "/tmp/" + i.name)
+                if index == 1:
+                    media.append(
+                        telebot.types.InputMediaPhoto(
+                            open(i, "rb"), caption=str(response["text"])
+                        )
                     )
-                )
+                else:
+                    media.append(telebot.types.InputMediaPhoto(open(i, "rb")))
+            index += 1
         for i in ALL_IDS:
             BOT.send_media_group(i, media=media)
-            BOT.send_message(i, str(response["text"]))
-    elif str(TO_SEND_FILES[0].name).endswith(".mp4"):
+    elif str(TO_SEND_FILES[0]).endswith(".mp4"):
         for i in ALL_IDS:
-            BOT.send_video(i, TO_SEND_FILES[0], caption=str(response["text"]))
+            current_file = open(TO_SEND_FILES[0], "rb")
+            BOT.send_video(i, current_file, caption=str(response["text"]))
+            current_file.close()
     else:
         for i in ALL_IDS:
-            BOT.send_photo(i, TO_SEND_FILES[0], caption=str(response["text"]))
+            current_file = open(TO_SEND_FILES[0], "rb")
+            BOT.send_photo(i, current_file, caption=str(response["text"]))
+            current_file.close()
+    del media[:]
     for i in TO_SEND_FILES:
-        path = i.name
-        i.close()
-        os.remove(path)
+        os.remove(i)
+    TO_SEND_FILES.clear()
 
 
 def check():
