@@ -1,9 +1,6 @@
-config.py
 vk_config.v2.json
 __pycache__
 .vscode
 log.txt
-chats.json
 tmp/
-last.id
-test.py
+config.json

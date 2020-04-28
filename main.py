@@ -11,104 +11,132 @@ from urllib.request import urlopen, urlretrieve
 import telebot
 import vk_api
 
-import config
+PATH_TO_CONFIG = os.path.dirname(os.path.abspath(__file__)) + "/config.json"
 
-BOT = telebot.TeleBot(config.token)
 
-VK_SESSION = vk_api.VkApi(config.phone, config.password)
+def update_config(CONFIG):
+    CONFIG["all_ids"] = list(CONFIG["all_ids"])
+    with open(PATH_TO_CONFIG, "w", encoding="utf-8") as f:
+        json.dump(CONFIG, f)
+
+
+CONFIG = json.load(open(PATH_TO_CONFIG, encoding="utf-8"))
+
+REQUIRED_FIELDS = [
+    "telegram_token",
+    "vk_phone",
+    "vk_password",
+    "working_directory",
+    "start_message",
+    "help_message",
+    "group_id",
+    "stop_message",
+]
+
+if not all(field in CONFIG.keys() for field in REQUIRED_FIELDS):
+    raise KeyError("Check required fields in CONFIG file")
+
+if not "all_ids" in CONFIG.keys():
+    CONFIG["all_ids"] = set()
+    update_config(CONFIG)
+else:
+    CONFIG["all_ids"] = set(CONFIG["all_ids"])
+if not "last_id" in CONFIG.keys():
+    CONFIG["last_id"] = -1
+    update_config(CONFIG)
+
+BOT = telebot.TeleBot(CONFIG["telegram_token"])
+
+VK_SESSION = vk_api.VkApi(CONFIG["vk_phone"], CONFIG["vk_password"])
 VK_SESSION.auth()
 
 VK = VK_SESSION.get_api()
 
-ALL_IDS = []
-LAST_ID = -1
-
-if not os.path.isfile(config.working_directory + "/last.id"):
-    with open(config.working_directory + "/last.id", "w") as f:
-        f.write(str(-1))
-else:
-    with open(config.working_directory + "/last.id", "r") as f:
-        try:
-            LAST_ID = int(f.read())
-        except ValueError as error:
-            LAST_ID = -1
-
-if not os.path.isfile(config.working_directory + "/chats.json"):
-    with open("chats.json", "w"):
-        pass
-with open(config.working_directory + "/chats.json", "r") as f:
-    ALL_IDS = json.loads(f.read())
+if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
+    open(CONFIG["working_directory"] + "/log.txt", "x")
 
 
-def write_log(error, info):
-    if not os.path.isfile(config.working_directory + "/log.txt"):
-        with open(config.working_directory + "/log.txt", "w"):
-            pass
-    log = ""
-    with open(config.working_directory + "/log.txt", "r") as f:
-        log = f.read()
-    log += str(traceback.format_exc()) + "\n" + str(info) + "\n\n"
-    with open("log.txt", "w") as f:
-        f.write(log)
+def write_log(info):
+    with open("log.txt", "a") as f:
+        f.write(str(traceback.format_exc()) + "\n" + str(info) + "\n\n")
 
 
-def write_ids():
-    global ALL_IDS
-    with open(config.working_directory + "/chats.json", "w") as f:
-        f.write(json.dumps(ALL_IDS))
-
-
-@BOT.channel_post_handler(commands=["start", "help"])
+@BOT.channel_post_handler(commands=["start"])
 def start_chanel(message):
-    global ALL_IDS
-    ALL_IDS.append(message.chat.id)
-    write_ids()
+    global CONFIG
+    CONFIG["all_ids"].add(message.chat.id)
+    update_config(CONFIG)
     BOT.reply_to(
-        message,
-        "Теперь Вы будете получать сообщения о новых записях в сообществе /dev/null во Вконтакте.",
+        message, CONFIG["start_message"],
     )
 
 
-@BOT.message_handler(commands=["start", "help"])
-def start(message):
-    global ALL_IDS
-    ALL_IDS.append(message.chat.id)
-    write_ids()
+@BOT.message_handler(commands=["start"])
+def start_private(message):
+    global CONFIG
+    CONFIG["all_ids"].add(message.chat.id)
+    update_config(CONFIG)
     BOT.reply_to(
-        message,
-        "Теперь Вы будете получать сообщения о новых записях в сообществе /dev/null во Вконтакте.",
+        message, CONFIG["start_message"],
     )
+
+
+@BOT.message_handler(commands=["help"])
+def help_private(message):
+    global CONFIG
+    BOT.reply_to(message, CONFIG["help_message"])
+
+
+@BOT.channel_post_handler(commands=["help"])
+def help_channel(message):
+    global CONFIG
+    BOT.reply_to(message, CONFIG["help_message"])
 
 
 @BOT.message_handler(commands=["stop"])
-def stop(message):
-    global ALL_IDS
+def stop_private(message):
+    global CONFIG
     try:
-        ALL_IDS.remove(message.chat.id)
-        write_ids()
-    except Exception as error:
+        CONFIG["all_ids"].remove(message.chat.id)
+        update_config(CONFIG)
+    except ValueError as error:
         pass
-    BOT.reply_to(message, "Вы отписаны от рассылки")
+    except Exception as error:
+        write_log(error)
+    BOT.reply_to(message, CONFIG["stop_message"])
+
+
+@BOT.channel_post_handler(commands=["stop"])
+def stop_channel(message):
+    global CONFIG
+    try:
+        CONFIG["all_ids"].remove(message.chat.id)
+        update_config(CONFIG)
+    except ValueError as error:
+        pass
+    except Exception as error:
+        write_log(error)
+    BOT.reply_to(message, CONFIG["stop_message"])
 
 
 TO_SEND_FILES = []
 
 
 def download(url):
+    global CONFIG
     page = urlopen(url)
     content = page.read()
     page.close()
     link = content.decode("utf-8", "ignore")
     string = re.compile('<source src=\\\\"([^"]*)\\\\"')
     urls = string.findall(link)
-
     for i in ["1080.mp4", "720.mp4", "360.mp4", "240.mp4"]:
         for uri in urls:
             if i in uri:
                 source = uri.replace("\\/", "/")
                 reg = re.compile(r"/([^/]*\.mp4)")
                 name = reg.findall(source)[0]
-                path = config.working_directory + "/tmp/"
+                path = CONFIG["working_directory"] + "/tmp/"
                 if not os.path.exists(path):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
@@ -119,54 +147,39 @@ def download(url):
 
 
 def post(response):
-    global ALL_IDS
+    global CONFIG
     attachments = response["attachments"]
-    cnt = 1
-    for i in attachments:
-        if i["type"] != "link":
+    number = 1
+    for attachment in attachments:
+        if attachment["type"] == "photo":
             url = (
-                "https://vk.com/"
-                + i["type"]
-                + str(i[i["type"]]["owner_id"])
+                "https://vk.com/photo"
+                + str(attachment["photo"]["owner_id"])
                 + "_"
-                + str(i[i["type"]]["id"])
+                + str(attachment["photo"]["id"])
             )
-            if i["type"] == "photo":
-                try:
-                    info = VK.photos.get(
-                        owner_id=str(i[i["type"]]["owner_id"]),
-                        album_id=i[i["type"]]["album_id"],
-                        photo_ids=i[i["type"]]["id"],
-                        count="1",
-                    )
-                    for j in info["items"][0]["sizes"]:
-                        url = j["url"]
-                    urllib.request.urlretrieve(
-                        url,
-                        config.working_directory
-                        + "/tmp/"
-                        + i["type"]
-                        + str(cnt)
-                        + ".jpg",
-                    )
-                    TO_SEND_FILES.append(
-                        config.working_directory
-                        + "/tmp/"
-                        + i["type"]
-                        + str(cnt)
-                        + ".jpg"
-                    )
-                except Exception as error:
-                    write_log(error, response["items"][i])
-            elif i["type"] == "video":
-                download(url)
-        elif i["type"] == "link":
+            try:
+                max_size = 0
+                for size in attachment["photo"]["sizes"]:
+                    if max_size < int(size["height"]):
+                        url = size["url"]
+                        max_size = int(size["height"])
+                file_path = (
+                    CONFIG["working_directory"] + "/tmp/photo" + str(number) + ".jpg"
+                )
+                urllib.request.urlretrieve(url, file_path)
+                TO_SEND_FILES.append(file_path)
+            except Exception as error:
+                write_log(response)
+        elif attachment["type"] == "video":
+            download(url)
+        elif attachment["type"] == "link":
             pass
         else:
             write_log(TypeError, response)
-        cnt += 1
-    media = []
+        number += 1
     if len(TO_SEND_FILES) > 1:
+        media = []
         index = 1
         for i in TO_SEND_FILES:
             if str(i).endswith(".mp4"):
@@ -188,51 +201,50 @@ def post(response):
                 else:
                     media.append(telebot.types.InputMediaPhoto(open(i, "rb")))
             index += 1
-        for i in ALL_IDS:
+        for i in CONFIG["all_ids"]:
             BOT.send_media_group(i, media=media)
+        del media[:]
     elif str(TO_SEND_FILES[0]).endswith(".mp4"):
-        for i in ALL_IDS:
+        for i in CONFIG["all_ids"]:
             current_file = open(TO_SEND_FILES[0], "rb")
             BOT.send_video(i, current_file, caption=str(response["text"]))
             current_file.close()
     else:
-        for i in ALL_IDS:
+        for i in CONFIG["all_ids"]:
             current_file = open(TO_SEND_FILES[0], "rb")
             BOT.send_photo(i, current_file, caption=str(response["text"]))
             current_file.close()
-    del media[:]
     for i in TO_SEND_FILES:
         os.remove(i)
     TO_SEND_FILES.clear()
 
 
 def check():
-    global LAST_ID
+    global CONFIG
     threading.Timer(20.0, check).start()
     response = VK.wall.get(
-        owner_id="-72495085", count="1", filter="owner", extended="1", offset=0
+        owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=0
     )
-    for i in range(len(response["items"]) - 1, -1, -1):
+    for item in response["items"]:
         if (
-            LAST_ID != int(response["items"][0]["id"])
-            and response["items"][i]["marked_as_ads"] != 1
-            and not response["items"][i]["text"].find("#партнёр") != -1
+            CONFIG["last_id"] != int(item["id"])
+            and item["marked_as_ads"] != 1
+            and not item["text"].find("#партнёр") != -1
         ):
             try:
-                post(response["items"][i])
+                post(item)
             except Exception as error:
-                write_log(error, response["items"][i])
-            LAST_ID = int(response["items"][i]["id"])
-            with open(config.working_directory + "/last.id", "w") as f:
-                f.write(str(LAST_ID))
+                write_log(item)
+            CONFIG["last_id"] = int(item["id"])
+            update_config(CONFIG)
 
 
-def run1():
+def run():
     BOT.polling()
 
 
 if __name__ == "__main__":
-    P1 = Process(target=run1)
+    P1 = Process(target=run)
     P1.start()
     P2 = Process(target=check)
     P2.start()

@@ -1,0 +1,10 @@
+{
+    "telegram_token": "{str}",
+    "vk_phone": "{str}",
+    "vk_password": "{str}",
+    "working_directory": "{str}",
+    "group_id": "{str}",
+    "start_message": "{str}",
+    "help_message": "{str}",
+    "stop_message": "{str}",
+}
