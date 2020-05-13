@@ -14,10 +14,10 @@ import vk_api
 PATH_TO_CONFIG = os.path.dirname(os.path.abspath(__file__)) + "/config.json"
 
 
-def update_config(CONFIG):
-    CONFIG["all_ids"] = list(CONFIG["all_ids"])
+def update_config(config):
+    config["all_ids"] = list(config["all_ids"])
     with open(PATH_TO_CONFIG, "w", encoding="utf-8") as f:
-        json.dump(CONFIG, f)
+        json.dump(config, f)
 
 
 CONFIG = json.load(open(PATH_TO_CONFIG, encoding="utf-8"))
@@ -57,7 +57,7 @@ if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
 
 
 def write_log(info):
-    with open("log.txt", "a") as f:
+    with open(CONFIG["working_directory"] + "log.txt", "a") as f:
         f.write(str(traceback.format_exc()) + "\n" + str(info) + "\n\n")
 
 
@@ -169,14 +169,20 @@ def post(response):
                 )
                 urllib.request.urlretrieve(url, file_path)
                 TO_SEND_FILES.append(file_path)
-            except Exception as error:
+            except Exception:
                 write_log(response)
         elif attachment["type"] == "video":
+            url = (
+                "https://vk.com/video"
+                + str(attachment["video"]["owner_id"])
+                + "_"
+                + str(attachment["video"]["id"])
+            )
             download(url)
         elif attachment["type"] == "link":
             pass
         else:
-            write_log(TypeError, response)
+            write_log(response)
         number += 1
     if len(TO_SEND_FILES) > 1:
         media = []
@@ -233,7 +239,7 @@ def check():
         ):
             try:
                 post(item)
-            except Exception as error:
+            except Exception:
                 write_log(item)
             CONFIG["last_id"] = int(item["id"])
             update_config(CONFIG)
