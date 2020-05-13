@@ -7,6 +7,7 @@ Installation
 ~~~bash
 git clone https://github.com/VadVergasov/vkparserbot.git
 cd vkparserbot
+pip3 install -r requirements.txt
 cp config.json.template config.json
 ~~~
 
