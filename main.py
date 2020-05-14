@@ -57,7 +57,7 @@ if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
 
 
 def write_log(info):
-    with open(CONFIG["working_directory"] + "log.txt", "a") as f:
+    with open(CONFIG["working_directory"] + "/log.txt", "a") as f:
         f.write(str(traceback.format_exc()) + "\n" + str(info) + "\n\n")
 
 
@@ -124,11 +124,12 @@ TO_SEND_FILES = []
 
 def download(url):
     global CONFIG
+    global TO_SEND_FILES
     page = urlopen(url)
     content = page.read()
     page.close()
     link = content.decode("utf-8", "ignore")
-    string = re.compile('<source src=\\\\"([^"]*)\\\\"')
+    string = re.compile('<source src=\\"([^"]*)\\"')
     urls = string.findall(link)
     for i in ["1080.mp4", "720.mp4", "360.mp4", "240.mp4"]:
         for uri in urls:
@@ -141,7 +142,6 @@ def download(url):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
                 urlretrieve(source, fullpath)
-                global TO_SEND_FILES
                 TO_SEND_FILES.append(fullpath)
                 return
 
