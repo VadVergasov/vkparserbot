@@ -15,6 +15,9 @@ PATH_TO_CONFIG = os.path.dirname(os.path.abspath(__file__)) + "/config.json"
 
 
 def update_config(config):
+    """
+    Updates config.
+    """
     config["all_ids"] = list(config["all_ids"])
     with open(PATH_TO_CONFIG, "w", encoding="utf-8") as f:
         json.dump(config, f)
@@ -57,12 +60,18 @@ if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
 
 
 def write_log(info):
+    """
+    Writing a log.
+    """
     with open(CONFIG["working_directory"] + "/log.txt", "a") as f:
         f.write(str(traceback.format_exc()) + "\n" + str(info) + "\n\n")
 
 
 @BOT.channel_post_handler(commands=["start"])
 def start_chanel(message):
+    """
+    Starting to post in a channel.
+    """
     global CONFIG
     CONFIG["all_ids"].add(message.chat.id)
     update_config(CONFIG)
@@ -73,6 +82,9 @@ def start_chanel(message):
 
 @BOT.message_handler(commands=["start"])
 def start_private(message):
+    """
+    Starting to post in a private chat.
+    """
     global CONFIG
     CONFIG["all_ids"].add(message.chat.id)
     update_config(CONFIG)
@@ -83,18 +95,27 @@ def start_private(message):
 
 @BOT.message_handler(commands=["help"])
 def help_private(message):
+    """
+    Answering in private chat for a /help command.
+    """
     global CONFIG
     BOT.reply_to(message, CONFIG["help_message"])
 
 
 @BOT.channel_post_handler(commands=["help"])
 def help_channel(message):
+    """
+    Answering in the channel for a /help command.
+    """
     global CONFIG
     BOT.reply_to(message, CONFIG["help_message"])
 
 
 @BOT.message_handler(commands=["stop"])
 def stop_private(message):
+    """
+    Stops posting in private chat.
+    """
     global CONFIG
     try:
         CONFIG["all_ids"].remove(message.chat.id)
@@ -108,6 +129,9 @@ def stop_private(message):
 
 @BOT.channel_post_handler(commands=["stop"])
 def stop_channel(message):
+    """
+    Stops posting in the channel.
+    """
     global CONFIG
     try:
         CONFIG["all_ids"].remove(message.chat.id)
@@ -123,6 +147,10 @@ TO_SEND_FILES = []
 
 
 def download(url):
+    """
+    Downloads video from VK by the URL.
+    https://github.com/sergei-bondarenko/vk-downloader
+    """
     global CONFIG
     global TO_SEND_FILES
     page = urlopen(url)
@@ -147,6 +175,9 @@ def download(url):
 
 
 def post(response):
+    """
+    Posts a post by the bot.
+    """
     global CONFIG
     attachments = response["attachments"]
     number = 1
@@ -226,6 +257,9 @@ def post(response):
 
 
 def check():
+    """
+    Checks if there is a new post in the specified group.
+    """
     global CONFIG
     threading.Timer(20.0, check).start()
     response = VK.wall.get(
@@ -246,6 +280,9 @@ def check():
 
 
 def run():
+    """
+    Runs the bot.
+    """
     BOT.polling()
 
 
