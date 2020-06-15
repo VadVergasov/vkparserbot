@@ -1,4 +1,4 @@
-VK Parser bot
+VK Parser bot [![License](https://img.shields.io/github/license/VadVergasov/vkparserbot)](https://github.com/VadVergasov/vkparserbot/blob/master/LICENSE)
 =============
 
 Installation
