@@ -277,6 +277,7 @@ def check():
             CONFIG["last_id"] != int(item["id"])
             and item["marked_as_ads"] != 1
             and not item["text"].find("#партнёр") != -1
+            and len(re.findall(r"\w+\|\w+", item["text"])) == 0
         ):
             try:
                 post(item)
