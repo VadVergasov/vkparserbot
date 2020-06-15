@@ -179,81 +179,88 @@ def post(response):
     Posts a post by the bot.
     """
     global CONFIG
-    attachments = response["attachments"]
-    number = 1
-    for attachment in attachments:
-        if attachment["type"] == "photo":
-            url = (
-                "https://vk.com/photo"
-                + str(attachment["photo"]["owner_id"])
-                + "_"
-                + str(attachment["photo"]["id"])
-            )
-            try:
-                max_size = 0
-                for size in attachment["photo"]["sizes"]:
-                    if max_size < int(size["height"]):
-                        url = size["url"]
-                        max_size = int(size["height"])
-                file_path = (
-                    CONFIG["working_directory"] + "/tmp/photo" + str(number) + ".jpg"
+    try:
+        attachments = response["attachments"]
+        number = 1
+        for attachment in attachments:
+            if attachment["type"] == "photo":
+                url = (
+                    "https://vk.com/photo"
+                    + str(attachment["photo"]["owner_id"])
+                    + "_"
+                    + str(attachment["photo"]["id"])
                 )
-                urllib.request.urlretrieve(url, file_path)
-                TO_SEND_FILES.append(file_path)
-            except Exception:
-                write_log(response)
-        elif attachment["type"] == "video":
-            url = (
-                "https://vk.com/video"
-                + str(attachment["video"]["owner_id"])
-                + "_"
-                + str(attachment["video"]["id"])
-            )
-            download(url)
-        elif attachment["type"] == "link":
-            pass
-        else:
-            write_log(response)
-        number += 1
-    if len(TO_SEND_FILES) > 1:
-        media = []
-        index = 1
-        for i in TO_SEND_FILES:
-            if str(i).endswith(".mp4"):
-                if index == 1:
-                    media.append(
-                        telebot.types.InputMediaVideo(
-                            open(i, "rb"), caption=str(response["text"])
-                        )
+                try:
+                    max_size = 0
+                    for size in attachment["photo"]["sizes"]:
+                        if max_size < int(size["height"]):
+                            url = size["url"]
+                            max_size = int(size["height"])
+                    file_path = (
+                        CONFIG["working_directory"]
+                        + "/tmp/photo"
+                        + str(number)
+                        + ".jpg"
                     )
-                else:
-                    media.append(telebot.types.InputMediaVideo(open(i, "rb")))
+                    urllib.request.urlretrieve(url, file_path)
+                    TO_SEND_FILES.append(file_path)
+                except Exception:
+                    write_log(response)
+            elif attachment["type"] == "video":
+                url = (
+                    "https://vk.com/video"
+                    + str(attachment["video"]["owner_id"])
+                    + "_"
+                    + str(attachment["video"]["id"])
+                )
+                download(url)
+            elif attachment["type"] == "link":
+                pass
             else:
-                if index == 1:
-                    media.append(
-                        telebot.types.InputMediaPhoto(
-                            open(i, "rb"), caption=str(response["text"])
+                write_log(response)
+            number += 1
+        if len(TO_SEND_FILES) > 1:
+            media = []
+            index = 1
+            for i in TO_SEND_FILES:
+                if str(i).endswith(".mp4"):
+                    if index == 1:
+                        media.append(
+                            telebot.types.InputMediaVideo(
+                                open(i, "rb"), caption=str(response["text"])
+                            )
                         )
-                    )
+                    else:
+                        media.append(telebot.types.InputMediaVideo(open(i, "rb")))
                 else:
-                    media.append(telebot.types.InputMediaPhoto(open(i, "rb")))
-            index += 1
+                    if index == 1:
+                        media.append(
+                            telebot.types.InputMediaPhoto(
+                                open(i, "rb"), caption=str(response["text"])
+                            )
+                        )
+                    else:
+                        media.append(telebot.types.InputMediaPhoto(open(i, "rb")))
+                index += 1
+            for i in CONFIG["all_ids"]:
+                BOT.send_media_group(i, media=media)
+            del media[:]
+        elif str(TO_SEND_FILES[0]).endswith(".mp4"):
+            for i in CONFIG["all_ids"]:
+                current_file = open(TO_SEND_FILES[0], "rb")
+                BOT.send_video(i, current_file, caption=str(response["text"]))
+                current_file.close()
+        else:
+            for i in CONFIG["all_ids"]:
+                current_file = open(TO_SEND_FILES[0], "rb")
+                BOT.send_photo(i, current_file, caption=str(response["text"]))
+                current_file.close()
+        for i in TO_SEND_FILES:
+            os.remove(i)
+        TO_SEND_FILES.clear()
+    except KeyError:
         for i in CONFIG["all_ids"]:
-            BOT.send_media_group(i, media=media)
-        del media[:]
-    elif str(TO_SEND_FILES[0]).endswith(".mp4"):
-        for i in CONFIG["all_ids"]:
-            current_file = open(TO_SEND_FILES[0], "rb")
-            BOT.send_video(i, current_file, caption=str(response["text"]))
-            current_file.close()
-    else:
-        for i in CONFIG["all_ids"]:
-            current_file = open(TO_SEND_FILES[0], "rb")
-            BOT.send_photo(i, current_file, caption=str(response["text"]))
-            current_file.close()
-    for i in TO_SEND_FILES:
-        os.remove(i)
-    TO_SEND_FILES.clear()
+            BOT.send_message(i, response["text"])
 
 
 def check():
