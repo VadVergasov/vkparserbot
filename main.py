@@ -58,6 +58,9 @@ VK = VK_SESSION.get_api()
 if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
     open(CONFIG["working_directory"] + "/log.txt", "x")
 
+if not os.path.isdir(CONFIG["working_directory"] + "/tmp"):
+    os.mkdir(CONFIG["working_directory"] + "/tmp")
+
 
 def write_log(info):
     """
