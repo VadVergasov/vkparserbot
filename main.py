@@ -27,8 +27,7 @@ CONFIG = json.load(open(PATH_TO_CONFIG, encoding="utf-8"))
 
 REQUIRED_FIELDS = [
     "telegram_token",
-    "vk_phone",
-    "vk_password",
+    "vk_token",
     "working_directory",
     "start_message",
     "help_message",
@@ -50,8 +49,7 @@ if not "last_id" in CONFIG.keys():
 
 BOT = telebot.TeleBot(CONFIG["telegram_token"])
 
-VK_SESSION = vk_api.VkApi(CONFIG["vk_phone"], CONFIG["vk_password"])
-VK_SESSION.auth()
+VK_SESSION = vk_api.VkApi(token=CONFIG["vk_token"])
 
 VK = VK_SESSION.get_api()
 

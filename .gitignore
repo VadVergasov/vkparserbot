@@ -4,3 +4,4 @@ __pycache__
 log.txt
 tmp/
 config.json
+bot-env/
