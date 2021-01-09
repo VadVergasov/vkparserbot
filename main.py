@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import json
 import os
 import re
@@ -77,7 +76,8 @@ def start_chanel(message):
     CONFIG["all_ids"].add(message.chat.id)
     update_config(CONFIG)
     BOT.reply_to(
-        message, CONFIG["start_message"],
+        message,
+        CONFIG["start_message"],
     )
 
 
@@ -90,7 +90,8 @@ def start_private(message):
     CONFIG["all_ids"].add(message.chat.id)
     update_config(CONFIG)
     BOT.reply_to(
-        message, CONFIG["start_message"],
+        message,
+        CONFIG["start_message"],
     )
 
 
@@ -273,9 +274,19 @@ def check():
     response = VK.wall.get(
         owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=0
     )
+    if str(response["items"][0]["is_pinned"]) == "1" and str(
+        response["items"][0]["id"]
+    ) == str(CONFIG["last_id"]):
+        response = VK.wall.get(
+            owner_id=CONFIG["group_id"],
+            count="1",
+            filter="owner",
+            extended="1",
+            offset=1,
+        )
     for item in response["items"]:
         if (
-            CONFIG["last_id"] != int(item["id"])
+            CONFIG["last_id"] < int(item["id"])
             and item["marked_as_ads"] != 1
             and not item["text"].find("#партнёр") != -1
             and not item["text"].find("#ad") != -1
