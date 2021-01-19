@@ -274,16 +274,19 @@ def check():
     response = VK.wall.get(
         owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=0
     )
-    if str(response["items"][0]["is_pinned"]) == "1" and str(
-        response["items"][0]["id"]
-    ) == str(CONFIG["last_id"]):
-        response = VK.wall.get(
-            owner_id=CONFIG["group_id"],
-            count="1",
-            filter="owner",
-            extended="1",
-            offset=1,
-        )
+    try:
+        if str(response["items"][0]["is_pinned"]) == "1" and str(
+            response["items"][0]["id"]
+        ) == str(CONFIG["last_id"]):
+            response = VK.wall.get(
+                owner_id=CONFIG["group_id"],
+                count="1",
+                filter="owner",
+                extended="1",
+                offset=1,
+            )
+    except KeyError:
+        pass
     for item in response["items"]:
         if (
             CONFIG["last_id"] < int(item["id"])
