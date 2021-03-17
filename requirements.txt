@@ -15,7 +15,7 @@ pathspec==0.8.1
 PyLink==0.3.3
 pylint==2.6.0
 pyserial==3.5
-pyTelegramBotAPI==3.7.5
+pyTelegramBotAPI==3.7.6
 regex==2020.11.13
 requests==2.25.1
 six==1.15.0
