@@ -6,3 +6,4 @@ tmp/
 config.json
 bot-env/
 *.service
+*.log

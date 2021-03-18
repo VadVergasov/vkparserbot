@@ -15,15 +15,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import json
+import logging
 import os
 import re
 import threading
 import traceback
 from multiprocessing import Process
-from urllib.request import urlopen, urlretrieve
 
+import requests
 import telebot
 import vk_api
+
+logging.basicConfig(filename="logging.log", level=logging.DEBUG)
 
 PATH_TO_CONFIG = os.path.dirname(os.path.abspath(__file__)) + "/config.json"
 
@@ -115,7 +118,6 @@ def help_private(message):
     """
     Answering in private chat for a /help command.
     """
-    global CONFIG
     BOT.reply_to(message, CONFIG["help_message"])
 
 
@@ -124,7 +126,6 @@ def help_channel(message):
     """
     Answering in the channel for a /help command.
     """
-    global CONFIG
     BOT.reply_to(message, CONFIG["help_message"])
 
 
@@ -168,11 +169,8 @@ def download(url):
     Downloads video from VK by the URL.
     https://github.com/sergei-bondarenko/vk-downloader
     """
-    global CONFIG
     global TO_SEND_FILES
-    page = urlopen(url)
-    content = page.read()
-    page.close()
+    content = requests.get(url)
     link = content.decode("utf-8", "ignore")
     string = re.compile('<source src=\\"([^"]*)\\"')
     urls = string.findall(link)
@@ -186,7 +184,8 @@ def download(url):
                 if not os.path.exists(path):
                     os.makedirs(path)
                 fullpath = os.path.join(path, name)
-                urlretrieve(source, fullpath)
+                with open(fullpath, "wb") as fl:
+                    fl.write(requests.get(source, stream=True).content)
                 TO_SEND_FILES.append(fullpath)
                 return
 
@@ -195,7 +194,6 @@ def post(response):
     """
     Posts a post by the bot.
     """
-    global CONFIG
     try:
         attachments = response["attachments"]
         number = 1
@@ -216,7 +214,8 @@ def post(response):
                     file_path = CONFIG["working_directory"] + "/tmp/photo%s.jpg" % str(
                         number
                     )
-                    urlretrieve(url, file_path)
+                    with open(file_path, "wb") as fl:
+                        fl.write(requests.get(url, stream=True).content)
                     TO_SEND_FILES.append(file_path)
                 except Exception:
                     write_log(response)
@@ -284,8 +283,9 @@ def check():
     global CONFIG
     threading.Timer(20.0, check).start()
     response = VK.wall.get(
-        owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=0
+        owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=1
     )
+    logging.debug(response)
     try:
         if str(response["items"][0]["is_pinned"]) == "1" and str(
             response["items"][0]["id"]
