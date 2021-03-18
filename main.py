@@ -19,7 +19,6 @@ import os
 import re
 import threading
 import traceback
-import urllib.request
 from multiprocessing import Process
 from urllib.request import urlopen, urlretrieve
 
@@ -214,13 +213,10 @@ def post(response):
                         if max_size < int(size["height"]):
                             url = size["url"]
                             max_size = int(size["height"])
-                    file_path = (
-                        CONFIG["working_directory"]
-                        + "/tmp/photo"
-                        + str(number)
-                        + ".jpg"
+                    file_path = CONFIG["working_directory"] + "/tmp/photo%s.jpg" % str(
+                        number
                     )
-                    urllib.request.urlretrieve(url, file_path)
+                    urlretrieve(url, file_path)
                     TO_SEND_FILES.append(file_path)
                 except Exception:
                     write_log(response)
