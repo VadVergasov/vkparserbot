@@ -16,7 +16,7 @@ PyLink==0.3.3
 pylint==2.7.4
 pyserial==3.5
 pyTelegramBotAPI==3.7.7
-regex==2021.3.17
+regex==2021.4.4
 requests==2.25.1
 six==1.15.0
 toml==0.10.2
