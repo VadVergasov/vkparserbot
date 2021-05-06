@@ -18,7 +18,7 @@ pyserial==3.5
 pyTelegramBotAPI==3.7.7
 regex==2021.4.4
 requests==2.25.1
-six==1.15.0
+six==1.16.0
 toml==0.10.2
 typed-ast==1.4.3
 typing-extensions==3.10.0.0
