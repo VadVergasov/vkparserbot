@@ -4,7 +4,7 @@ attrs==21.2.0
 black==21.5b1
 certifi==2020.12.5
 chardet==4.0.0
-click==7.1.2
+click==8.0.0
 colorama==0.4.4
 idna==2.10
 isort==5.8.0
