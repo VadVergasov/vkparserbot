@@ -19,7 +19,6 @@ import logging
 import os
 import re
 import threading
-import traceback
 from multiprocessing import Process
 
 import requests
@@ -71,18 +70,10 @@ VK_SESSION = vk_api.VkApi(token=CONFIG["vk_token"])
 VK = VK_SESSION.get_api()
 
 if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
-    open(CONFIG["working_directory"] + "/log.txt", "x")
+    open(CONFIG["working_directory"] + "/log.txt", "x", encoding="utf8")
 
 if not os.path.isdir(CONFIG["working_directory"] + "/tmp"):
     os.mkdir(CONFIG["working_directory"] + "/tmp")
-
-
-def write_log(info):
-    """
-    Writing a log.
-    """
-    with open(CONFIG["working_directory"] + "/log.txt", "a") as f:
-        f.write(str(traceback.format_exc()) + "\n" + str(info) + "\n\n")
 
 
 @BOT.channel_post_handler(commands=["start"])
@@ -138,10 +129,10 @@ def stop_private(message):
     try:
         CONFIG["all_ids"].remove(message.chat.id)
         update_config(CONFIG)
-    except ValueError as error:
+    except ValueError:
         pass
     except Exception as error:
-        write_log(error)
+        logging.error(error)
     BOT.reply_to(message, CONFIG["stop_message"])
 
 
@@ -154,10 +145,10 @@ def stop_channel(message):
     try:
         CONFIG["all_ids"].remove(message.chat.id)
         update_config(CONFIG)
-    except ValueError as error:
+    except ValueError:
         pass
     except Exception as error:
-        write_log(error)
+        logging.error(error)
     BOT.reply_to(message, CONFIG["stop_message"])
 
 
@@ -218,7 +209,7 @@ def post(response):
                         fl.write(requests.get(url, stream=True).content)
                     TO_SEND_FILES.append(file_path)
                 except Exception:
-                    write_log(response)
+                    logging.error(response)
             elif attachment["type"] == "video":
                 url = (
                     "https://vk.com/video"
@@ -230,7 +221,7 @@ def post(response):
             elif attachment["type"] == "link":
                 pass
             else:
-                write_log(response)
+                logging.error(response)
             number += 1
         if len(TO_SEND_FILES) > 1:
             media = []
@@ -310,7 +301,7 @@ def check():
             try:
                 post(item)
             except Exception:
-                write_log(item)
+                logging.error(item)
             CONFIG["last_id"] = int(item["id"])
             update_config(CONFIG)
 
