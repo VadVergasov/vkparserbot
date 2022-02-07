@@ -24,6 +24,7 @@ from multiprocessing import Process
 import requests
 import telebot
 import vk_api
+import youtube_dl
 
 logging.basicConfig(filename="logging.log", level=logging.DEBUG)
 
@@ -155,32 +156,6 @@ def stop_channel(message):
 TO_SEND_FILES = []
 
 
-def download(url):
-    """
-    Downloads video from VK by the URL.
-    https://github.com/sergei-bondarenko/vk-downloader
-    """
-    global TO_SEND_FILES
-    content = requests.get(url)
-    link = content.decode("utf-8", "ignore")
-    string = re.compile('<source src=\\"([^"]*)\\"')
-    urls = string.findall(link)
-    for i in ["1080.mp4", "720.mp4", "360.mp4", "240.mp4"]:
-        for uri in urls:
-            if i in uri:
-                source = uri.replace("\\/", "/")
-                reg = re.compile(r"/([^/]*\.mp4)")
-                name = reg.findall(source)[0]
-                path = CONFIG["working_directory"] + "/tmp/"
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                fullpath = os.path.join(path, name)
-                with open(fullpath, "wb") as fl:
-                    fl.write(requests.get(source, stream=True).content)
-                TO_SEND_FILES.append(fullpath)
-                return
-
-
 def post(response):
     """
     Posts a post by the bot.
@@ -217,7 +192,11 @@ def post(response):
                     + "_"
                     + str(attachment["video"]["id"])
                 )
-                download(url)
+                ydl_opts = {"outtmpl": "tmp/%(id)s.%(ext)s"}
+                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    filename = ydl.prepare_filename(info)
+                    TO_SEND_FILES.append(filename)
             elif attachment["type"] == "link":
                 pass
             else:
