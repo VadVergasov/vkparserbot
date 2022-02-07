@@ -283,7 +283,7 @@ def check():
     global CONFIG
     threading.Timer(20.0, check).start()
     response = VK.wall.get(
-        owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=1
+        owner_id=CONFIG["group_id"], count="1", filter="owner", extended="1", offset=0
     )
     logging.debug(response)
     try:
