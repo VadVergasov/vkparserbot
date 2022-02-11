@@ -273,9 +273,11 @@ def check():
     )
     logging.debug(response)
     try:
-        if str(response["items"][0]["is_pinned"]) == "1" and str(
-            response["items"][0]["id"]
-        ) == str(CONFIG["last_id"]):
+        if (
+            str(response["items"][0]["is_pinned"]) == "1"
+            and int(response["items"][0]["id"]) <= CONFIG["last_id"]
+        ):
+            logging.info("Pinned post is old, getting non-pinned")
             response = VK.wall.get(
                 owner_id=CONFIG["group_id"],
                 count="1",
