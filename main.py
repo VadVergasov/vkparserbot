@@ -26,7 +26,11 @@ import telebot
 import vk_api
 import youtube_dl
 
-logging.basicConfig(filename="logging.log", level=logging.DEBUG)
+logging.basicConfig(
+    filename="logging.log",
+    format="%(asctime)s - %(levelname)s: %(message)s",
+    level=logging.DEBUG,
+)
 
 PATH_TO_CONFIG = os.path.dirname(os.path.abspath(__file__)) + "/config.json"
 
@@ -75,6 +79,17 @@ if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
 
 if not os.path.isdir(CONFIG["working_directory"] + "/tmp"):
     os.mkdir(CONFIG["working_directory"] + "/tmp")
+
+
+class Logger(object):
+    def debug(self, msg):
+        logging.debug(msg)
+
+    def warning(self, msg):
+        logging.warning(msg)
+
+    def error(self, msg):
+        logging.error(msg)
 
 
 @BOT.channel_post_handler(commands=["start"])
@@ -183,8 +198,9 @@ def post(response):
                     with open(file_path, "wb") as fl:
                         fl.write(requests.get(url, stream=True).content)
                     TO_SEND_FILES.append(file_path)
-                except Exception:
-                    logging.error(response)
+                except Exception as error:
+                    logging.info(response)
+                    logging.error(error)
             elif attachment["type"] == "video":
                 url = (
                     "https://vk.com/video"
@@ -192,7 +208,7 @@ def post(response):
                     + "_"
                     + str(attachment["video"]["id"])
                 )
-                ydl_opts = {"outtmpl": "tmp/%(id)s.%(ext)s"}
+                ydl_opts = {"outtmpl": "tmp/%(id)s.%(ext)s", "logger": Logger()}
                 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     filename = ydl.prepare_filename(info)
@@ -200,7 +216,7 @@ def post(response):
             elif attachment["type"] == "link":
                 pass
             else:
-                logging.error(response)
+                logging.info("Unknown type of attachment" + response)
             number += 1
         if len(TO_SEND_FILES) > 1:
             media = []
@@ -267,6 +283,7 @@ def check():
                 extended="1",
                 offset=1,
             )
+            logging.debug(response)
     except KeyError:
         pass
     for item in response["items"]:
@@ -279,8 +296,9 @@ def check():
         ):
             try:
                 post(item)
-            except Exception:
-                logging.error(item)
+            except Exception as error:
+                logging.error(error)
+                logging.info(item)
             CONFIG["last_id"] = int(item["id"])
             update_config(CONFIG)
 
