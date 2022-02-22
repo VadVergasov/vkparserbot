@@ -1,11 +1,12 @@
 [Unit]
 Description=VK parser bot
-After=multi-user.target
 
 [Service]
 User=username
 WorkingDirectory=folder_where bot is located
 ExecStart=path_to_python path_to_main
+Restart=always
+RestartSec=5000
 
 [Install]
 WantedBy=multi-user.target
