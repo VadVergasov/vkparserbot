@@ -28,8 +28,8 @@ import youtube_dl
 
 logging.basicConfig(
     filename="logging.log",
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(funcName)s() - %(lineno)d: %(message)s",
+    level=logging.INFO,
 )
 
 PATH_TO_CONFIG = os.path.dirname(os.path.abspath(__file__)) + "/config.json"
