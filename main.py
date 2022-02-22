@@ -74,9 +74,6 @@ VK_SESSION = vk_api.VkApi(token=CONFIG["vk_token"])
 
 VK = VK_SESSION.get_api()
 
-if not os.path.isfile(CONFIG["working_directory"] + "/log.txt"):
-    open(CONFIG["working_directory"] + "/log.txt", "x", encoding="utf8")
-
 if not os.path.isdir(CONFIG["working_directory"] + "/tmp"):
     os.mkdir(CONFIG["working_directory"] + "/tmp")
 
