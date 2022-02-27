@@ -257,6 +257,8 @@ def post(response):
     except KeyError:
         for i in CONFIG["all_ids"]:
             BOT.send_message(i, response["text"])
+    except Exception as error:
+        logging.error(error)
 
 
 def check():
