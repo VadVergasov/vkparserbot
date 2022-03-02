@@ -1,6 +1,6 @@
 appdirs==1.4.4
 astroid==2.9.3
-attrs==21.2.0
+attrs==21.4.0
 black==22.1
 certifi==2021.10.8
 chardet==4.0.0
