@@ -4,7 +4,7 @@ attrs==21.4.0
 black==22.1
 certifi==2021.10.8
 chardet==4.0.0
-charset-normalizer==2.0.10
+charset-normalizer==2.0.12
 click==8.0.3
 colorama==0.4.4
 idna==2.10
@@ -17,7 +17,7 @@ platformdirs==2.5.1
 PyLink==0.3.3
 pylint==2.12.2
 pyserial==3.5
-pyTelegramBotAPI==4.2.2
+pyTelegramBotAPI==4.4.0
 regex==2021.11.10
 requests==2.27.1
 six==1.16.0
