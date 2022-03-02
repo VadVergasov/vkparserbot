@@ -19,7 +19,7 @@ pylint==2.12.2
 pyserial==3.5
 pyTelegramBotAPI==4.2.2
 regex==2021.11.10
-requests==2.26.0
+requests==2.27.1
 six==1.16.0
 toml==0.10.2
 tomli==2.0.1
