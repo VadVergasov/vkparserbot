@@ -19,7 +19,7 @@ platformdirs==2.5.2
 PyLink==0.3.3
 pylint==2.13.7
 pyserial==3.5
-pyTelegramBotAPI==4.4.1
+pyTelegramBotAPI==4.5.0
 regex==2022.3.15
 requests==2.27.1
 six==1.16.0
