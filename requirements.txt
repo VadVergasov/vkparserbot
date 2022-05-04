@@ -28,6 +28,6 @@ tomli==2.0.1
 typed-ast==1.5.3
 typing_extensions==4.2.0
 urllib3==1.26.9
-vk-api==11.9.7
+vk-api==11.9.8
 wrapt==1.14.0
 youtube-dl==2021.12.17
