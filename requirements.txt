@@ -25,7 +25,7 @@ requests==2.27.1
 six==1.16.0
 toml==0.10.2
 tomli==2.0.1
-typed-ast==1.5.3
+typed-ast==1.5.4
 typing_extensions==4.2.0
 urllib3==1.26.9
 vk-api==11.9.8
