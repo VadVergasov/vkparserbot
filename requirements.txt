@@ -1,5 +1,5 @@
 appdirs==1.4.4
-astroid==2.12.7
+astroid==2.12.9
 attrs==22.1.0
 black==22.8.0
 certifi==2022.6.15
