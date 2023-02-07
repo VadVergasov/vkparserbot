@@ -16,7 +16,7 @@ mccabe==0.7.0
 mypy-extensions==0.4.3
 packaging==23.0
 pathspec==0.11.0
-platformdirs==2.6.2
+platformdirs==3.0.0
 PyLink==0.3.3
 pylint==2.16.0
 pyserial==3.5
