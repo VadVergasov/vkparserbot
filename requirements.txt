@@ -29,7 +29,7 @@ tomli==2.0.1
 tomlkit==0.11.8
 typed-ast==1.5.5
 typing_extensions==4.7.1
-urllib3==2.0.3
+urllib3==2.0.4
 vk-api==11.9.9
 wrapt==1.15.0
 youtube-dl==2021.12.17
