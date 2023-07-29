@@ -18,7 +18,7 @@ packaging==23.1
 pathspec==0.11.1
 platformdirs==3.9.1
 PyLink==0.3.3
-pylint==2.17.4
+pylint==2.17.5
 pyserial==3.5
 pyTelegramBotAPI==4.12.0
 regex==2023.6.3
