@@ -31,5 +31,5 @@ typed-ast==1.5.5
 typing_extensions==4.8.0
 urllib3==2.0.7
 vk-api==11.9.9
-wrapt==1.15.0
+wrapt==1.16.0
 youtube-dl==2021.12.17
