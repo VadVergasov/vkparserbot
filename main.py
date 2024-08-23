@@ -310,7 +310,7 @@ def check():
             CONFIG["last_id"] = int(item["id"])
             update_config(CONFIG)
         else:
-+            logging.info(f"If result: {CONFIG['last_id'] < int(item['id'])} {item['marked_as_ads'] != 1} {not item['text'].find('#партнёр') != -1} {not item['text'].find('#ad') != -1} {len(re.findall(r'\w+\|\w+', item['text'])) == 0}")
+            logging.info(f"If result: {CONFIG['last_id'] < int(item['id'])} {item['marked_as_ads'] != 1} {not item['text'].find('#партнёр') != -1} {not item['text'].find('#ad') != -1} {len(re.findall(r'\w+\|\w+', item['text'])) == 0}")
 
 
 def run():
