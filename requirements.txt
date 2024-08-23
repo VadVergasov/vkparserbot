@@ -22,7 +22,7 @@ pylint==2.17.5
 pyserial==3.5
 pyTelegramBotAPI==4.14.0
 regex==2023.10.3
-requests==2.31.0
+requests==2.32.3
 six==1.16.0
 toml==0.10.2
 tomli==2.0.1
@@ -32,4 +32,4 @@ typing_extensions==4.8.0
 urllib3==2.1.0
 vk-api==11.9.9
 wrapt==1.16.0
-youtube-dl==2021.12.17
+yt-dlp==2024.8.6
