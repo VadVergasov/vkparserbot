@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import threading
+import subprocess
 from multiprocessing import Process
 
 import requests
@@ -42,6 +43,7 @@ def update_config(config):
     config["all_ids"] = list(config["all_ids"])
     with open(PATH_TO_CONFIG, "w", encoding="utf-8") as f:
         json.dump(config, f)
+    config["all_ids"] = set(config["all_ids"])
 
 
 CONFIG = json.load(open(PATH_TO_CONFIG, encoding="utf-8"))
@@ -176,6 +178,7 @@ def post(response):
         attachments = response["attachments"]
         number = 1
         for attachment in attachments:
+            logging.info(f"Attachment type: {attachment['type']}")
             if attachment["type"] == "photo":
                 url = (
                     "https://vk.com/photo"
@@ -199,17 +202,21 @@ def post(response):
                     logging.info(response)
                     logging.error(error)
             elif attachment["type"] == "video":
+                logging.info(f"Video id {attachment['video']['id']}")
                 url = (
                     "https://vk.com/video"
                     + str(attachment["video"]["owner_id"])
                     + "_"
                     + str(attachment["video"]["id"])
                 )
-                ydl_opts = {"outtmpl": "tmp/%(id)s.%(ext)s", "logger": Logger()}
-                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(info)
-                    TO_SEND_FILES.append(filename)
+                output_fmt = "tmp/%(id)s.%(ext)s"
+                result = subprocess.run(["yt-dlp", "-o", output_fmt, url], capture_output=True)
+                start = str(result.stdout).find("Destination: ")
+                end = str(result.stdout).find('\\n', 297)
+                if start == -1 or end == -1:
+                    raise Exception(f"No output: {result.stdout}")
+                filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), str(result.stdout)[start + len("Destination: "):end])
+                TO_SEND_FILES.append(filename)
             elif attachment["type"] == "link":
                 pass
             else:
@@ -302,13 +309,15 @@ def check():
                 logging.info(item)
             CONFIG["last_id"] = int(item["id"])
             update_config(CONFIG)
+        else:
++            logging.info(f"If result: {CONFIG['last_id'] < int(item['id'])} {item['marked_as_ads'] != 1} {not item['text'].find('#партнёр') != -1} {not item['text'].find('#ad') != -1} {len(re.findall(r'\w+\|\w+', item['text'])) == 0}")
 
 
 def run():
     """
     Runs the bot.
     """
-    BOT.polling()
+    BOT.infinity_polling()
 
 
 if __name__ == "__main__":
