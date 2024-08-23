@@ -32,4 +32,4 @@ typing_extensions==4.8.0
 urllib3==2.1.0
 vk-api==11.9.9
 wrapt==1.16.0
-youtube-dl==2021.12.17
+yt-dlp==2024.8.6
